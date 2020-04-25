@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--日志级别以及优先级排序: OFF > FATAL > ERROR > WARN > INFO > DEBUG > TRACE > ALL -->
+<!--status="WARN" :用于设置log4j2自身内部日志的信息输出级别，默认是OFF-->
+<!--monitorInterval="30"  :间隔秒数,自动检测配置文件的变更和重新配置本身-->
+<configuration status="WARN" monitorInterval="60" strict="true">
+    <properties>
+        <!--自定义一些常量，之后使用${变量名}引用-->
+        <property name="logPath">./logs</property>
+        <property name="charset">UTF-8</property>
+        <!--自定义的输出格式-->
+        <property name="pattern">%X{ip}|%t|%X{serverName}|%d{yyyy-MM-dd HH:mm:ss,SSS}|%p|%c|%m%n</property>
+    </properties>
+    <!--appenders:定义输出内容,输出格式,输出方式,日志保存策略等,常用其下三种标签[console,File,RollingFile]-->
+    <!--Appender可以理解为日志的输出目的地-->
+    <appenders>
+
+        <!--console :控制台输出的配置-->
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${pattern}" charset="${charset}"/>
+        </Console>
+
+        <!--RollingRandomAccessFile性能比RollingFile提升官网宣称是20-200%-->
+        <RollingRandomAccessFile name="DEMO.ERROR" immediateFlush="true" bufferSize="4096"
+                                 fileName="${logPath}/error.log"
+                                 filePattern="${logPath}/error.%d{yyyy-MM-dd}.gz"
+                                 ignoreExceptions="false">
+            <PatternLayout pattern="${pattern}" charset="${charset}"/>
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+                <SizeBasedTriggeringPolicy size="500MB"/>
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${logPath}" maxDepth="2" followLinks="true">
+                    <IfFileName glob="error.*.gz"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="DEMO.WARN" immediateFlush="false" bufferSize="4096"
+                                 fileName="${logPath}/warn.log"
+                                 filePattern="${logPath}/warn.%d{yyyy-MM-dd}-%i.gz"
+                                 ignoreExceptions="false">
+            <PatternLayout pattern="${pattern}" charset="${charset}"/>
+            <Filters>
+                <!--ThresholdFilter :日志输出过滤-->
+                <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+                <SizeBasedTriggeringPolicy size="500MB"/>
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${logPath}" maxDepth="2" followLinks="true">
+                    <IfFileName glob="warn.*.gz"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="DEMO.INFO" immediateFlush="true"
+                                 fileName="${logPath}/info.log"
+                                 filePattern="${logPath}/info.%d{yyyy-MM-dd}-%i.gz"
+                                 ignoreExceptions="false">
+            <PatternLayout pattern="${pattern}" charset="${charset}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy modulate="true" interval="1"/>
+                <SizeBasedTriggeringPolicy size="500MB"/>
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${logPath}" maxDepth="2" followLinks="true">
+                    <IfFileName glob="info.*.gz"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+
+    </appenders>
+
+    <!--然后定义logger，只有定义了logger并引入的appender，appender才会生效-->
+    <loggers>
+        <Logger additivity="true" name="com.example" level="INFO">
+        </Logger>
+        <!-- Root节点用来指定项目的根日志，如果没有单独指定Logger，那么就会默认使用该Root日志输出 -->
+        <Root level="INFO" includeLocation="true">
+            <AppenderRef ref="console"/>
+            <AppenderRef ref="DEMO.INFO"/>
+            <AppenderRef ref="DEMO.ERROR"/>
+            <AppenderRef ref="DEMO.WARN"/>
+        </Root>
+    </loggers>
+</configuration>
